@@ -1,6 +1,17 @@
-# Welcome to your Expo app 👋
+# Unmissable - A Reminder App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This app is the result of my first experiments with [Cursor](https://cursor.sh), an AI-powered code editor. It's a simple yet functional reminder app built with Expo and React Native that helps you manage your daily tasks and recurring reminders.
+
+## Technical Stack
+
+- [Expo](https://expo.dev) with file-based routing
+- React Native
+- TypeScript
+- AsyncStorage for local data persistence
+- React Native Reanimated for smooth animations
+- React Native Gesture Handler for swipe actions
+
+# Development Guide
 
 ## Get started
 
