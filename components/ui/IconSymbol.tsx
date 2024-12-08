@@ -9,6 +9,7 @@ import { OpaqueColorValue, StyleProp, TextStyle, ViewStyle } from 'react-native'
 const MAPPING = {
   'house.fill': 'home',
   'plus.circle.fill': 'add-circle',
+  'list.bullet': 'list',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],

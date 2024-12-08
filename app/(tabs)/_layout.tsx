@@ -41,6 +41,13 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
           }}
         />
+        <Tabs.Screen
+          name="manage"
+          options={{
+            title: 'Manage',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
+          }}
+        />
       </Tabs>
     </SafeAreaView>
   );
