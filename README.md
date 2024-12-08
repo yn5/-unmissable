@@ -60,6 +60,7 @@ npm run format:check
 ### Pre-commit Hooks
 
 The project uses Husky to run pre-commit hooks. Currently, it:
+
 - Runs Prettier on staged files before each commit using lint-staged
 
 This ensures that all committed code follows the project's formatting standards. If you need to bypass the hooks for any reason, you can use the `--no-verify` flag with your git commit.
