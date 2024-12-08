@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, useMemo } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, RefreshControl, Dimensions, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, { 
   useAnimatedScrollHandler,
@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { getReminders, completeReminder } from '@/utils/reminderStorage';
+import { getReminders, completeReminder, updateReminder } from '@/utils/reminderStorage';
 import type { Reminder } from '@/types/reminder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -41,32 +41,101 @@ function formatDate(date: Date): string {
   }
 }
 
-function ReminderItem({ reminder, onComplete }: { reminder: Reminder; onComplete: () => void }) {
+function isReminderDueOnDate(reminder: Reminder, date: Date): boolean {
+  const reminderDate = new Date(reminder.dueDate);
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // If no recurrence, just check if it's on this day
+  if (!reminder.recurrence) {
+    const reminderStartOfDay = new Date(reminderDate);
+    reminderStartOfDay.setHours(0, 0, 0, 0);
+    return reminderStartOfDay.getTime() === startOfDay.getTime();
+  }
+
+  // For recurring reminders, check if this date is a recurrence
+  const originalDate = new Date(reminder.dueDate);
+  originalDate.setHours(0, 0, 0, 0);
+  const timeDiff = startOfDay.getTime() - originalDate.getTime();
+  const daysDiff = Math.round(timeDiff / DAY_IN_MS);
+
+  switch (reminder.recurrence.type) {
+    case 'daily':
+      return daysDiff >= 0;
+    case 'weekly':
+      return daysDiff >= 0 && daysDiff % 7 === 0;
+    case 'monthly': {
+      const originalDay = originalDate.getDate();
+      return date.getDate() === originalDay && daysDiff >= 0;
+    }
+    case 'custom': {
+      const { customDays } = reminder.recurrence;
+      return daysDiff >= 0 && daysDiff % (customDays || 1) === 0;
+    }
+    default:
+      return false;
+  }
+}
+
+function isReminderCompletedOnDate(reminder: Reminder, date: Date): boolean {
+  if (!reminder.completedDates?.length) return false;
+
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  return reminder.completedDates.some(completedDate => {
+    const date = new Date(completedDate);
+    return date >= startOfDay && date <= endOfDay;
+  });
+}
+
+function ReminderItem({ reminder, date, onComplete }: { 
+  reminder: Reminder; 
+  date: Date;
+  onComplete: () => void; 
+}) {
   const colorScheme = useColorScheme() ?? 'light';
-  const isPast = new Date(reminder.dueDate) < new Date();
+  const now = new Date();
+  const isPast = new Date(reminder.dueDate).getTime() < now.getTime();
+  const isCompleted = isReminderCompletedOnDate(reminder, date);
 
   return (
     <ThemedView style={styles.reminderItem}>
       <ThemedView style={styles.reminderContent}>
-        <ThemedText 
-          style={[
-            styles.reminderTitle,
-            reminder.completed && styles.completedText,
-            isPast && !reminder.completed && styles.pastDueText
-          ]}
-        >
-          {reminder.title}
-        </ThemedText>
+        <View style={styles.titleContainer}>
+          <ThemedText 
+            style={[
+              styles.reminderTitle,
+              isCompleted && styles.completedText,
+              isPast && !isCompleted && styles.pastDueText
+            ]}
+          >
+            {reminder.title}
+          </ThemedText>
+          {reminder.recurrence && (
+            <ThemedText style={styles.recurrenceTag}>
+              {reminder.recurrence.type === 'custom' 
+                ? `Every ${reminder.recurrence.customDays} days`
+                : reminder.recurrence.type}
+            </ThemedText>
+          )}
+        </View>
         <ThemedText style={styles.reminderDate}>
           {new Date(reminder.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </ThemedText>
-        {reminder.completed && (
+        {isCompleted && (
           <ThemedText style={styles.completedAt}>
-            Completed: {new Date(reminder.completedAt!).toLocaleString()}
+            Completed: {new Date(
+              reminder.completedDates!.find(d => isReminderCompletedOnDate({ ...reminder, completedDates: [d] }, date))!
+            ).toLocaleString()}
           </ThemedText>
         )}
       </ThemedView>
-      {!reminder.completed && (
+      {!isCompleted && (
         <TouchableOpacity
           onPress={onComplete}
           style={[styles.completeButton, { backgroundColor: Colors[colorScheme].tint }]}
@@ -87,21 +156,13 @@ function DayView({
 }: { 
   date: Date; 
   reminders: Reminder[];
-  onComplete: (id: string) => void;
+  onComplete: (id: string, date: Date) => void;
   onRefresh: () => void;
   refreshing: boolean;
 }) {
   const colorScheme = useColorScheme() ?? 'light';
 
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const dayReminders = reminders.filter(reminder => {
-    const reminderDate = new Date(reminder.dueDate);
-    return reminderDate >= startOfDay && reminderDate <= endOfDay;
-  });
+  const dayReminders = reminders.filter(reminder => isReminderDueOnDate(reminder, date));
 
   return (
     <Animated.View style={[styles.dayContainer, { width: SCREEN_WIDTH }]}>
@@ -109,11 +170,12 @@ function DayView({
       
       <FlatList
         data={dayReminders}
-        keyExtractor={item => item.id}
+        keyExtractor={item => `${item.id}-${date.toISOString()}`}
         renderItem={({ item }) => (
           <ReminderItem
             reminder={item}
-            onComplete={() => onComplete(item.id)}
+            date={date}
+            onComplete={() => onComplete(item.id, date)}
           />
         )}
         refreshControl={
@@ -154,8 +216,18 @@ export default function HomeScreen() {
     setIsReady(true);
   };
 
-  const handleComplete = async (reminderId: string) => {
-    await completeReminder(reminderId);
+  const handleComplete = async (reminderId: string, date: Date) => {
+    const reminder = reminders.find(r => r.id === reminderId);
+    if (!reminder) return;
+
+    if (reminder.recurrence) {
+      // For recurring reminders, add the completion date
+      const completedDates = [...(reminder.completedDates || []), date.toISOString()];
+      await updateReminder({ ...reminder, completedDates });
+    } else {
+      // For non-recurring reminders, mark as completed
+      await completeReminder(reminderId);
+    }
     await loadReminders();
   };
 
@@ -285,5 +357,18 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recurrenceTag: {
+    fontSize: 12,
+    opacity: 0.7,
+    backgroundColor: '#eee',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
 });
