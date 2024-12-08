@@ -100,8 +100,10 @@ function ReminderItem({ reminder, date, onComplete }: {
 }) {
   const colorScheme = useColorScheme() ?? 'light';
   const now = new Date();
-  const isPast = new Date(reminder.dueDate).getTime() < now.getTime();
+  const reminderDate = new Date(reminder.dueDate);
+  const isPast = reminderDate.getTime() <= now.getTime();
   const isCompleted = isReminderCompletedOnDate(reminder, date);
+  const isFuture = reminderDate.setHours(0,0,0) > now.setHours(0,0,0);
 
   return (
     <ThemedView style={styles.reminderItem}>
@@ -134,8 +136,13 @@ function ReminderItem({ reminder, date, onComplete }: {
             ).toLocaleString()}
           </ThemedText>
         )}
+        {isFuture && (
+          <ThemedText style={styles.futureText}>
+            Cannot be completed yet
+          </ThemedText>
+        )}
       </ThemedView>
-      {!isCompleted && (
+      {!isCompleted && !isFuture && (
         <TouchableOpacity
           onPress={onComplete}
           style={[styles.completeButton, { backgroundColor: Colors[colorScheme].tint }]}
@@ -370,5 +377,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
+  },
+  futureText: {
+    color: '#ccc',
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
