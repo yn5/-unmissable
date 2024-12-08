@@ -37,6 +37,50 @@ export async function updateReminder(updatedReminder: Reminder): Promise<void> {
   }
 }
 
+export async function toggleReminderCompletion(reminderId: string, date: Date): Promise<void> {
+  try {
+    const reminders = await getReminders();
+    const reminder = reminders.find(r => r.id === reminderId);
+    if (!reminder) return;
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (reminder.recurrence) {
+      // For recurring reminders, toggle the completion date
+      const isCompleted = reminder.completedDates?.some(d => {
+        const completedDate = new Date(d);
+        return completedDate >= startOfDay && completedDate <= endOfDay;
+      });
+
+      let completedDates = [...(reminder.completedDates || [])];
+      if (isCompleted) {
+        // Remove the completion for this day
+        completedDates = completedDates.filter(d => {
+          const completedDate = new Date(d);
+          return !(completedDate >= startOfDay && completedDate <= endOfDay);
+        });
+      } else {
+        // Add completion for this day
+        completedDates.push(date.toISOString());
+      }
+      await updateReminder({ ...reminder, completedDates });
+    } else {
+      // For non-recurring reminders, toggle completed state
+      await updateReminder({ 
+        ...reminder, 
+        completed: !reminder.completed,
+        completedAt: !reminder.completed ? date.toISOString() : undefined
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling reminder completion:', error);
+    throw error;
+  }
+}
+
 export async function completeReminder(reminderId: string): Promise<void> {
   try {
     const reminders = await getReminders();

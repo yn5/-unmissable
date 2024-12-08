@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { getReminders, completeReminder, updateReminder } from '@/utils/reminderStorage';
+import { getReminders, toggleReminderCompletion } from '@/utils/reminderStorage';
 import type { Reminder } from '@/types/reminder';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -103,7 +103,7 @@ function ReminderItem({ reminder, date, onComplete }: {
   const reminderDate = new Date(reminder.dueDate);
   const isPast = reminderDate.getTime() <= now.getTime();
   const isCompleted = isReminderCompletedOnDate(reminder, date);
-  const isFuture = reminderDate.setHours(0,0,0) > now.setHours(0,0,0);
+  const isShownOnFutureDate = date.setHours(0,0,0) > now.setHours(0,0,0);
 
   return (
     <ThemedView style={styles.reminderItem}>
@@ -136,18 +136,18 @@ function ReminderItem({ reminder, date, onComplete }: {
             ).toLocaleString()}
           </ThemedText>
         )}
-        {isFuture && (
-          <ThemedText style={styles.futureText}>
-            Cannot be completed yet
-          </ThemedText>
-        )}
       </ThemedView>
-      {!isCompleted && !isFuture && (
+      {!isShownOnFutureDate && (
         <TouchableOpacity
           onPress={onComplete}
-          style={[styles.completeButton, { backgroundColor: Colors[colorScheme].tint }]}
+          style={[
+            styles.completeButton, 
+            { backgroundColor: isCompleted ? Colors[colorScheme].icon : Colors[colorScheme].tint }
+          ]}
         >
-          <ThemedText style={styles.completeButtonText}>Complete</ThemedText>
+          <ThemedText style={styles.completeButtonText}>
+            {isCompleted ? 'Undo' : 'Complete'}
+          </ThemedText>
         </TouchableOpacity>
       )}
     </ThemedView>
@@ -227,14 +227,7 @@ export default function HomeScreen() {
     const reminder = reminders.find(r => r.id === reminderId);
     if (!reminder) return;
 
-    if (reminder.recurrence) {
-      // For recurring reminders, add the completion date
-      const completedDates = [...(reminder.completedDates || []), date.toISOString()];
-      await updateReminder({ ...reminder, completedDates });
-    } else {
-      // For non-recurring reminders, mark as completed
-      await completeReminder(reminderId);
-    }
+    await toggleReminderCompletion(reminderId, date);
     await loadReminders();
   };
 
