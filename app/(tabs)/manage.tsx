@@ -41,6 +41,7 @@ function ReminderItem({ reminder, onDelete }: { reminder: Reminder; onDelete: ()
     <Animated.View 
       entering={FadeIn} 
       exiting={FadeOut}
+      style={styles.itemContainer}
     >
       <Swipeable
         ref={rowRef}
@@ -124,12 +125,16 @@ const styles = StyleSheet.create({
     gap: 16,
     flexGrow: 1,
   },
+  itemContainer: {
+    height: 'auto',
+  },
   reminderItem: {
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ccc',
     backgroundColor: '#fff',
+    minHeight: 80,
   },
   reminderTitle: {
     fontSize: 18,
@@ -146,13 +151,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rightAction: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    height: '100%',
+    justifyContent: 'center',
     backgroundColor: 'transparent',
     width: 80,
   },
   actionContent: {
     flex: 1,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     borderTopRightRadius: 8,
@@ -161,7 +167,6 @@ const styles = StyleSheet.create({
   actionText: {
     color: '#fff',
     fontWeight: '600',
-    padding: 20,
   },
   emptyText: {
     textAlign: 'center',
