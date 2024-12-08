@@ -14,3 +14,5 @@ export const ThemedView = forwardRef<View, ThemedViewProps>(
 		return <View ref={ref} style={[{ backgroundColor }, style]} {...otherProps} />;
 	}
 );
+
+ThemedView.displayName = 'ThemedView';

@@ -23,6 +23,7 @@ This app is the result of my first experiments with [Cursor](https://cursor.sh),
 - React Native Reanimated for smooth animations
 - React Native Gesture Handler for swipe actions
 - Prettier for consistent code formatting
+- ESLint for code quality
 - Husky for Git hooks
 
 # Development Guide
@@ -41,9 +42,11 @@ This app is the result of my first experiments with [Cursor](https://cursor.sh),
     npx expo start
    ```
 
-## Code Formatting
+## Code Quality
 
-The project uses Prettier for consistent code formatting. The configuration includes automatic import sorting using `@trivago/prettier-plugin-sort-imports`.
+### Formatting
+
+The project uses Prettier for consistent code formatting. The configuration includes automatic import sorting using `@ianvs/prettier-plugin-sort-imports`.
 
 To format your code:
 
@@ -57,13 +60,21 @@ To check if files are formatted correctly (useful in CI/CD):
 npm run format:check
 ```
 
+### Linting
+
+The project uses ESLint with Expo's configuration. To lint your code:
+
+```bash
+npm run lint
+```
+
 ### Pre-commit Hooks
 
 The project uses Husky to run pre-commit hooks. Currently, it:
+- Runs Prettier on all staged files
+- Runs ESLint with auto-fix on staged TypeScript/JavaScript files
 
-- Runs Prettier on staged files before each commit using lint-staged
-
-This ensures that all committed code follows the project's formatting standards. If you need to bypass the hooks for any reason, you can use the `--no-verify` flag with your git commit.
+This ensures that all committed code follows the project's formatting standards and passes linting rules. If you need to bypass the hooks for any reason, you can use the `--no-verify` flag with your git commit.
 
 ## Running the App
 
