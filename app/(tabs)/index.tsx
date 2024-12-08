@@ -1,74 +1,167 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useCallback, useState } from 'react';
+import { StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { getReminders, completeReminder } from '@/utils/reminderStorage';
+import type { Reminder } from '@/types/reminder';
+
+function ReminderItem({ reminder, onComplete }: { reminder: Reminder; onComplete: () => void }) {
+  const colorScheme = useColorScheme() ?? 'light';
+  const isPast = new Date(reminder.dueDate) < new Date();
+
+  return (
+    <ThemedView style={styles.reminderItem}>
+      <ThemedView style={styles.reminderContent}>
+        <ThemedText 
+          style={[
+            styles.reminderTitle,
+            reminder.completed && styles.completedText,
+            isPast && !reminder.completed && styles.pastDueText
+          ]}
+        >
+          {reminder.title}
+        </ThemedText>
+        <ThemedText style={styles.reminderDate}>
+          {new Date(reminder.dueDate).toLocaleString()}
+        </ThemedText>
+        {reminder.completed && (
+          <ThemedText style={styles.completedAt}>
+            Completed: {new Date(reminder.completedAt!).toLocaleString()}
+          </ThemedText>
+        )}
+      </ThemedView>
+      {!reminder.completed && (
+        <TouchableOpacity
+          onPress={onComplete}
+          style={[styles.completeButton, { backgroundColor: Colors[colorScheme].tint }]}
+        >
+          <ThemedText style={styles.completeButtonText}>Complete</ThemedText>
+        </TouchableOpacity>
+      )}
+    </ThemedView>
+  );
+}
 
 export default function HomeScreen() {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const colorScheme = useColorScheme() ?? 'light';
+
+  const loadReminders = async () => {
+    const loadedReminders = await getReminders();
+    setReminders(loadedReminders.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()));
+  };
+
+  const handleComplete = async (reminderId: string) => {
+    await completeReminder(reminderId);
+    await loadReminders();
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadReminders();
+    setRefreshing(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminders();
+    }, [])
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      <ThemedText type="title" style={styles.heading}>Reminders</ThemedText>
+      
+      <FlatList
+        data={reminders}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <ReminderItem
+            reminder={item}
+            onComplete={() => handleComplete(item.id)}
+          />
+        )}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors[colorScheme].text}
+          />
+        }
+        ListEmptyComponent={
+          <ThemedText style={styles.emptyText}>
+            No reminders yet. Tap the + button to create one!
+          </ThemedText>
+        }
+        contentContainerStyle={styles.list}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  heading: {
+    marginBottom: 24,
+  },
+  list: {
+    gap: 16,
+    flexGrow: 1,
+  },
+  reminderItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  reminderContent: {
+    flex: 1,
+    gap: 4,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  reminderTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  reminderDate: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  completedText: {
+    opacity: 0.5,
+    textDecorationLine: 'line-through',
+  },
+  pastDueText: {
+    color: '#ff4444',
+  },
+  completedAt: {
+    fontSize: 12,
+    opacity: 0.5,
+    fontStyle: 'italic',
+  },
+  completeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  completeButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyText: {
+    textAlign: 'center',
+    opacity: 0.5,
+    marginTop: 32,
   },
 });
