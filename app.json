@@ -9,20 +9,35 @@
 		"userInterfaceStyle": "automatic",
 		"newArchEnabled": true,
 		"ios": {
-			"supportsTablet": true
+			"supportsTablet": true,
+			"infoPlist": {
+				"UIBackgroundModes": ["remote-notification", "remote-notification"]
+			},
+			"bundleIdentifier": "com.anonymous.unmissable"
 		},
 		"android": {
 			"adaptiveIcon": {
 				"foregroundImage": "./assets/images/adaptive-icon.png",
 				"backgroundColor": "#ffffff"
-			}
+			},
+			"permissions": ["NOTIFICATIONS"]
 		},
 		"web": {
 			"bundler": "metro",
 			"output": "static",
 			"favicon": "./assets/images/favicon.png"
 		},
-		"plugins": ["expo-router", "expo-splash-screen"],
+		"plugins": [
+			"expo-router",
+			"expo-splash-screen",
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/images/notification-icon.png",
+					"color": "#ffffff"
+				}
+			]
+		],
 		"experiments": {
 			"typedRoutes": true
 		}

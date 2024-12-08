@@ -1,5 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Reminder } from '@/types/reminder';
+import {
+	cancelNotification,
+	rescheduleAllNotifications,
+	scheduleNotification,
+} from './notificationManager';
 
 const STORAGE_KEY = '@reminders';
 
@@ -8,6 +13,7 @@ export async function saveReminder(reminder: Reminder): Promise<void> {
 		const existingReminders = await getReminders();
 		const updatedReminders = [...existingReminders, reminder];
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReminders));
+		await scheduleNotification(reminder);
 	} catch (error) {
 		console.error('Error saving reminder:', error);
 		throw error;
@@ -31,6 +37,7 @@ export async function updateReminder(updatedReminder: Reminder): Promise<void> {
 			reminder.id === updatedReminder.id ? updatedReminder : reminder
 		);
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReminders));
+		await scheduleNotification(updatedReminder);
 	} catch (error) {
 		console.error('Error updating reminder:', error);
 		throw error;
@@ -66,14 +73,16 @@ export async function toggleReminderCompletion(reminderId: string, date: Date): 
 				// Add completion for this day
 				completedDates.push(date.toISOString());
 			}
-			await updateReminder({ ...reminder, completedDates });
+			const updatedReminder = { ...reminder, completedDates };
+			await updateReminder(updatedReminder);
 		} else {
 			// For non-recurring reminders, toggle completed state
-			await updateReminder({
+			const updatedReminder = {
 				...reminder,
 				completed: !reminder.completed,
 				completedAt: !reminder.completed ? date.toISOString() : undefined,
-			});
+			};
+			await updateReminder(updatedReminder);
 		}
 	} catch (error) {
 		console.error('Error toggling reminder completion:', error);
@@ -94,6 +103,7 @@ export async function completeReminder(reminderId: string): Promise<void> {
 				: reminder
 		);
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReminders));
+		await cancelNotification(reminderId);
 	} catch (error) {
 		console.error('Error completing reminder:', error);
 		throw error;
@@ -105,8 +115,14 @@ export async function deleteReminder(reminderId: string): Promise<void> {
 		const reminders = await getReminders();
 		const updatedReminders = reminders.filter(reminder => reminder.id !== reminderId);
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReminders));
+		await cancelNotification(reminderId);
 	} catch (error) {
 		console.error('Error deleting reminder:', error);
 		throw error;
 	}
+}
+
+export async function initializeNotifications(): Promise<void> {
+	const reminders = await getReminders();
+	await rescheduleAllNotifications(reminders);
 }

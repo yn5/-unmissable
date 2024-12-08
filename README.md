@@ -71,6 +71,7 @@ npm run lint
 ### Pre-commit Hooks
 
 The project uses Husky to run pre-commit hooks. Currently, it:
+
 - Runs Prettier on all staged files
 - Runs ESLint with auto-fix on staged TypeScript/JavaScript files
 

@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -15,25 +15,18 @@ const RECURRENCE_OPTIONS: { label: string; value: RecurrenceType | null }[] = [
 	{ label: 'Daily', value: 'daily' },
 	{ label: 'Weekly', value: 'weekly' },
 	{ label: 'Monthly', value: 'monthly' },
-	{ label: 'Custom', value: 'custom' },
 ];
 
 export default function NewReminderScreen() {
 	const [title, setTitle] = useState('');
 	const [date, setDate] = useState(new Date());
 	const [recurrenceType, setRecurrenceType] = useState<RecurrenceType | null>(null);
-	const [customDays, setCustomDays] = useState('');
 	const colorScheme = useColorScheme() ?? 'light';
 	const textColor = Colors[colorScheme].text;
 
 	const handleSave = async () => {
 		if (!title.trim()) {
 			Alert.alert('Error', 'Please enter a title for the reminder');
-			return;
-		}
-
-		if (recurrenceType === 'custom' && (!customDays || parseInt(customDays) < 1)) {
-			Alert.alert('Error', 'Please enter a valid number of days for custom recurrence');
 			return;
 		}
 
@@ -47,7 +40,6 @@ export default function NewReminderScreen() {
 				...(recurrenceType && {
 					recurrence: {
 						type: recurrenceType,
-						...(recurrenceType === 'custom' && { customDays: parseInt(customDays) }),
 					},
 					completedDates: [],
 				}),
@@ -112,23 +104,6 @@ export default function NewReminderScreen() {
 					))}
 				</View>
 
-				{recurrenceType === 'custom' && (
-					<View style={styles.customDaysContainer}>
-						<TextInput
-							style={[
-								styles.customDaysInput,
-								{ color: textColor, borderColor: Colors[colorScheme].icon },
-							]}
-							placeholder="Number of days"
-							placeholderTextColor={Colors[colorScheme].icon}
-							value={customDays}
-							onChangeText={setCustomDays}
-							keyboardType="number-pad"
-						/>
-						<ThemedText style={styles.customDaysLabel}>days</ThemedText>
-					</View>
-				)}
-
 				<ThemedView
 					style={[styles.button, { backgroundColor: Colors[colorScheme].tint }]}
 					onTouchEnd={handleSave}
@@ -186,22 +161,6 @@ const styles = StyleSheet.create({
 	},
 	recurrenceOptionTextSelected: {
 		color: '#fff',
-	},
-	customDaysContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-	},
-	customDaysInput: {
-		height: 48,
-		borderWidth: 1,
-		borderRadius: 8,
-		paddingHorizontal: 16,
-		fontSize: 16,
-		width: 120,
-	},
-	customDaysLabel: {
-		fontSize: 16,
 	},
 	button: {
 		height: 48,

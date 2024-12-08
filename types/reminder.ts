@@ -1,8 +1,7 @@
-export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'custom';
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly';
 
 export interface RecurrenceConfig {
 	type: RecurrenceType;
-	customDays?: number; // For custom recurrence interval
 }
 
 export interface Reminder {
