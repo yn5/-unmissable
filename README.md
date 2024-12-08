@@ -5,7 +5,9 @@ This app is the result of my first experiments with [Cursor](https://cursor.sh),
 ## Features
 
 - Create reminders with title and time settings
-- Support for recurring reminders (daily, weekly, monthly, or custom intervals)
+- Support for recurring reminders (daily, weekly, or monthly)
+- Push notifications for due and overdue reminders
+- Notifications repeat until task completion
 - Daily view with horizontal swipe navigation
 - Toggle completion status of reminders
 - Manage all reminders with swipe-to-delete functionality
@@ -22,6 +24,7 @@ This app is the result of my first experiments with [Cursor](https://cursor.sh),
 - AsyncStorage for local data persistence
 - React Native Reanimated for smooth animations
 - React Native Gesture Handler for swipe actions
+- Expo Notifications for push notifications
 - Prettier for consistent code formatting
 - ESLint for code quality
 - Husky for Git hooks
