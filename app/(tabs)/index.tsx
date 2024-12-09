@@ -73,10 +73,6 @@ function isReminderDueOnDate(reminder: Reminder, date: Date): boolean {
 			const originalDay = originalDate.getDate();
 			return date.getDate() === originalDay && daysDiff >= 0;
 		}
-		case 'custom': {
-			const { customDays } = reminder.recurrence;
-			return daysDiff >= 0 && daysDiff % (customDays || 1) === 0;
-		}
 		default:
 			return false;
 	}
@@ -126,11 +122,7 @@ function ReminderItem({
 						{reminder.title}
 					</ThemedText>
 					{reminder.recurrence && (
-						<ThemedText style={styles.recurrenceTag}>
-							{reminder.recurrence.type === 'custom'
-								? `Every ${reminder.recurrence.customDays} days`
-								: reminder.recurrence.type}
-						</ThemedText>
+						<ThemedText style={styles.recurrenceTag}>{reminder.recurrence.type}</ThemedText>
 					)}
 				</View>
 				<ThemedText style={styles.reminderDate}>

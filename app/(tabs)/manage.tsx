@@ -50,11 +50,7 @@ function ReminderItem({ reminder, onDelete }: { reminder: Reminder; onDelete: ()
 						Due: {new Date(reminder.dueDate).toLocaleString()}
 					</ThemedText>
 					{reminder.recurrence && (
-						<ThemedText style={styles.recurrenceTag}>
-							{reminder.recurrence.type === 'custom'
-								? `Every ${reminder.recurrence.customDays} days`
-								: reminder.recurrence.type}
-						</ThemedText>
+						<ThemedText style={styles.recurrenceTag}>{reminder.recurrence.type}</ThemedText>
 					)}
 				</ThemedView>
 			</Swipeable>
