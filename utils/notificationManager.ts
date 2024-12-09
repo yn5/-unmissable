@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import type { Reminder } from '@/types/reminder';
 
@@ -16,17 +14,6 @@ Notifications.setNotificationHandler({
 const NOTIFICATION_REPEAT_INTERVAL_MINUTES = 1;
 
 export async function registerForPushNotificationsAsync() {
-	let token;
-
-	if (Platform.OS === 'android') {
-		await Notifications.setNotificationChannelAsync('default', {
-			name: 'default',
-			importance: Notifications.AndroidImportance.MAX,
-			vibrationPattern: [0, 250, 250, 250],
-			lightColor: '#FF231F7C',
-		});
-	}
-
 	const { status: existingStatus } = await Notifications.getPermissionsAsync();
 	let finalStatus = existingStatus;
 	if (existingStatus !== 'granted') {
@@ -37,8 +24,6 @@ export async function registerForPushNotificationsAsync() {
 		console.log('Failed to get push token for push notification!');
 		return;
 	}
-
-	return token;
 }
 
 export async function scheduleNotification(reminder: Reminder) {

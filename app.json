@@ -11,16 +11,9 @@
 		"ios": {
 			"supportsTablet": true,
 			"infoPlist": {
-				"UIBackgroundModes": ["remote-notification", "remote-notification"]
+				"UIBackgroundModes": ["remote-notification"]
 			},
 			"bundleIdentifier": "com.anonymous.unmissable"
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/images/adaptive-icon.png",
-				"backgroundColor": "#ffffff"
-			},
-			"permissions": ["NOTIFICATIONS"]
 		},
 		"web": {
 			"bundler": "metro",
